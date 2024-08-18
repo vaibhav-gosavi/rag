@@ -1,0 +1,9 @@
+faiss-cpu
+numpy
+flask
+streamlit
+langchain
+sentence-transformers
+transformers
+requests
+python-dotenv
