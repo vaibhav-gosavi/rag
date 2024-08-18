@@ -2,13 +2,12 @@ import faiss
 import numpy as np
 from flask import Flask, request, jsonify
 import streamlit as st
-# from langchain.document_loaders import UnstructuredURLLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import UnstructuredURLLoader
-from langchain_community.vectorstores import FAISS
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from sentence_transformers import SentenceTransformer
 from transformers import pipeline
 import requests
+import os
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -52,9 +51,9 @@ def process_url():
         context = " ".join(retrieved_chunks)
         prompt = (
             f"Context: {context}\n\n"
-        f"Question: {query}\n"
-        "Please provide a clear and concise answer based only on the context above.\n"
-        f"Answer:"
+            f"Question: {query}\n"
+            "Please provide a clear and concise answer based only on the context above.\n"
+            f"Answer:"
         )
 
         response = llm_pipeline(
@@ -83,8 +82,10 @@ def run_streamlit():
     if st.button('Get Answer'):
         if url and question:
             with st.spinner('Processing...'):
+                # Use the deployed Flask app URL (localhost if running locally)
+                flask_url = f"http://localhost:{os.environ.get('PORT', 5000)}/process"
                 response = requests.post(
-                    'http://127.0.0.1:5000/process',
+                    flask_url,
                     json={'url': url, 'question': question}
                 )
             if response.status_code == 200:
@@ -105,7 +106,8 @@ if __name__ == '__main__':
 
     # Run Flask in a separate thread
     def run_flask():
-        app.run(debug=False, use_reloader=False)  # Disable Flask reloader for compatibility with Streamlit
+        port = int(os.environ.get("PORT", 5000))
+        app.run(host="0.0.0.0", port=port, debug=False, use_reloader=False)  # Disable Flask reloader for compatibility with Streamlit
 
     flask_thread = Thread(target=run_flask)
     flask_thread.start()
