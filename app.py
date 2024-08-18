@@ -82,8 +82,8 @@ def run_streamlit():
     if st.button('Get Answer'):
         if url and question:
             with st.spinner('Processing...'):
-                # Use the deployed Flask app URL (localhost if running locally)
-                flask_url = f"http://localhost:{os.environ.get('PORT', 5000)}/process"
+                # Replace localhost with the actual deployed Flask app URL
+                flask_url = "https://your-flask-app.onrender.com/process"
                 response = requests.post(
                     flask_url,
                     json={'url': url, 'question': question}
