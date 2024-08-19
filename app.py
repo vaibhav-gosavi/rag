@@ -1,13 +1,13 @@
 import faiss
 import numpy as np
 from flask import Flask, request, jsonify
-import streamlit as st
 from langchain_community.document_loaders import UnstructuredURLLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from sentence_transformers import SentenceTransformer
 from transformers import pipeline
-import requests
 import os
+import nltk
+nltk.download('wordnet')
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -45,7 +45,7 @@ def process_url():
     # Step 5: Query the system
     def query_rag_system(query):
         query_embedding = embedding_model.encode([query])
-        _, indices = index.search(query_embedding, k=5)
+        _, indices = index.search(query_embedding, k=6)
         retrieved_chunks = [chunks[i].page_content for i in indices[0]]
 
         context = " ".join(retrieved_chunks)
@@ -67,50 +67,6 @@ def process_url():
     answer = query_rag_system(question)
     return jsonify({'answer': answer})
 
-# Streamlit UI
-def run_streamlit():
-    st.set_page_config(page_title="URL Question Answering System", layout="wide")
-    
-    st.title('📄 URL Question Answering System')
-    st.markdown("""
-        Enter a URL and ask a question. The system will retrieve relevant information from the page and provide a concise answer.
-    """)
-
-    url = st.text_input('Enter the URL:', '')
-    question = st.text_input('Enter your question:', '')
-
-    if st.button('Get Answer'):
-        if url and question:
-            with st.spinner('Processing...'):
-                # Replace localhost with the actual deployed Flask app URL
-                flask_url = "https://your-flask-app.onrender.com/process"
-                response = requests.post(
-                    flask_url,
-                    json={'url': url, 'question': question}
-                )
-            if response.status_code == 200:
-                answer = response.json().get('answer', 'No answer found.')
-                st.success(f'**Answer:** {answer}')
-            else:
-                st.error('Error: Could not retrieve answer.')
-        else:
-            st.warning('Please enter both a URL and a question.')
-
-    st.markdown("""
-        ---
-        Made with ❤️ using Streamlit & Flask.
-    """)
-
 if __name__ == '__main__':
-    from threading import Thread
-
-    # Run Flask in a separate thread
-    def run_flask():
-        port = int(os.environ.get("PORT", 5000))
-        app.run(host="0.0.0.0", port=port, debug=False, use_reloader=False)  # Disable Flask reloader for compatibility with Streamlit
-
-    flask_thread = Thread(target=run_flask)
-    flask_thread.start()
-
-    # Run Streamlit
-    run_streamlit()
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)
